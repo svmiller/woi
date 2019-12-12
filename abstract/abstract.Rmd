@@ -1,0 +1,14 @@
+---
+title: "The Effect of White Social Prejudice on Support for American Democracy"
+author: |
+  | Steven V. Miller, Clemson University 
+  | Nicholas T. Davis, University of Alabama
+abstract: "Social prejudice constitutes an unwillingness to associate with individuals whose cultural or racial background differs from one's own group. Such prejudice is a particularly thorny problem in the context of democracy, which requires citizens to minimally respect such differences. In this manuscript, we assess the relationships between these attitudes and support for democratic institutions. Using World Values Survey data from 1995 to 2011, we find that prejudice toward cultural, ethnic, or racial 'others' reduces the value that white Americans assign to democracy. We also find white Americans who exhibit these attitudes are more likely to dismiss the value of separation of powers and are more likely to support army rule. These findings imply that exclusionary rhetoric targeted toward nonwhite groups is accompanied by lower baseline support for democracy. We close with a discussion of how our analyses inform the study of Americans' attitudes toward democracy."
+output: 
+  pdf_document:
+    latex_engine: pdflatex
+    keep_tex: true
+fontfamily: mathpazo
+fontsize: 11pt
+
+---
