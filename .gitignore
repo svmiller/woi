@@ -13,3 +13,5 @@ aux
 
 appendix/.Rproj.user
 appendix/.Rhistory
+appendix/*.log
+appendix/*.tex
