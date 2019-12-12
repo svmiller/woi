@@ -1,0 +1,895 @@
+---
+output: 
+  pdf_document:
+    citation_package: natbib
+    fig_caption: true
+    latex_engine: pdflatex
+    keep_tex: TRUE
+    toc: true
+    toc_depth: 2
+    template: ~/Dropbox/miscelanea/svm-r-markdown-templates/svm-latex-ms.tex
+title: "The Effect of White Social Prejudice on Support for American Democracy"
+subtitle: "Supplemental Appendix"
+author:
+- name: Steven V. Miller
+  affiliation: Clemson University
+  email: svmille@clemson.edu
+- name: Nicholas T. Davis
+  affiliation: "University of Alabama"
+  email: svmille@clemson.edu  
+fontfamily: mathpazo
+fontfamilyoptions: sc, osf
+fontsize: 11pt
+tables: yes
+appendix: yes
+appendixletter: A
+header-includes:
+  - \usepackage{array}   
+  - \usepackage{caption}
+  - \usepackage{graphicx}
+  - \usepackage{siunitx}
+  - \usepackage[table]{xcolor}
+  - \usepackage{multirow}
+  - \usepackage{hhline}
+  - \usepackage{calc}
+  - \usepackage{tabularx}
+  - \usepackage{fontawesome}
+  - \usepackage[para,online,flushleft]{threeparttable}
+bibliography: ../refs.bib
+biblio-style: apsr
+anonymous: FALSE
+linkcolor: black
+---
+
+<!-- Jesus Christ this is a shit ton of mind-numbing busy work... -->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE,
+                      message=FALSE, warning=FALSE,
+                      fig.path='figs/',
+                      cache.path = '_cache/',
+                      fig.process = function(x) {
+                      x2 = sub('-\\d+([.][a-z]+)$', '\\1', x)
+                      if (file.rename(x, x2)) x2 else x
+                      })
+```
+
+
+```{r loadlibaries, include=FALSE}
+# knitr::opts_chunk$set(cache=FALSE, kfigr.prefix=TRUE, kfigr.link=TRUE) 
+# setwd("~/Dropbox/projects/outgroup-prejudice-democratic-orientations")
+library(tidyverse)
+library(stevemisc)
+library(stargazer)
+library(dotwhisker)
+library(broom)
+library(huxtable)
+library(jtools)
+library(blme)
+library(optimx)
+library(dfoptim)
+library(kableExtra) 
+```
+
+```{r loadstuff, include=FALSE}
+Data <- readRDS("../data/data.rds")
+
+Models <- readRDS("../data/models.rds")
+
+Sims <- readRDS("../data/sims.rds")
+
+# setwd("data")
+# Appendix <- list.files(pattern = ".rds") %>%
+#   map(readRDS) %>%
+#   flatten(.)
+# setwd("..")
+
+allrds = list.files(pattern = ".rds", path = "data") %>%
+  stringr::str_remove(., ".rds")
+
+for(i in allrds) {
+      filepath <- file.path(paste0("data/",i,".rds"))
+      assign(i, readRDS(filepath))
+    }
+
+
+aTables <- readRDS("data/aTables.rds")
+
+aFigures <- readRDS("data/aFigures.rds")
+ 
+```
+
+\newpage
+\singlespacing
+
+\listoffigures
+
+\listoftables
+
+\newpage 
+
+\doublespacing
+
+# Introduction
+
+This is the supplemental appendix to "The Effect of White Social Prejudice on Support for American Democracy", currently a working paper in preparation for submission and hopeful acceptance at a peer-reviewed journal. The supplemental appendix, like the manuscript, is a dynamic document that automates the code and the presentation of the finished results in the document itself [@xie2013ddrk]. This approach to document preparation has multiple benefits, namely in the ability to drive the incidence of transcription error to zero while calling specific results into the document. We will make some references in this document to specific statistics that the raw markup will show is a direct extrapolation from code into presentation. We plan to make the raw markup available upon request during the peer review process and will deposit the final analyses to the corresponding author's Github account upon publication. This will facilitate transparency in published statistical analysis, consistent with the [Data Access and Research Transparency Initiative](http://www.dartstatement.org/) (DA-RT) by the American Political Science Association.
+
+# Descriptive Statistics
+
+We start the supplemental appendix with basic descriptive statistics for the variables we present in the manuscript. We choose to be brief in this section of the appendix since this information is descriptive and provides basic background information about the analyses we present in the manuscript. 
+
+Table \ref{tab:descript} is a basic table of descriptive statistics for all variables used in Figure 2 in the manuscript, intuitively subsetting the descriptive statistics to just those Americans in the survey that self-identify as white. We took care to note that we standardized all variables by two standard deviations around the mean for all non-binary inputs, which is consistent with best practice in the mixed effects modeling framework [c.f. @gelman2008sri]. Here, we present the summary statistics for the raw inputs and, for ease, do not present summary statistics for the square terms we also derive from the age and ideology variables.
+
+```{r descriptive, eval=TRUE, results="asis", echo=FALSE, tidy = TRUE, size="small",  message=F, warning=F}
+
+# cat(aTables$tab_descriptive, sep="\n")
+aTables$tab_descriptive
+```
+
+Figure \ref{fig:barraceyear} provides a quick visual summary of the variation of number observations by survey wave/year and race/ethnicity. These categories are obviously not mutually exclusive, nor related in a meaningful way. We offer this visualization to quickly communicate that 75% of the third, fourth, fifth, and sixth waves of WVS data featured respondents who self-identify as white and that the total number of observations by the survey year for those who self-identify as white.
+
+```{r barraceyear, eval=T, echo=F, results="asis", cache=T, fig.cap="\\label{fig:barraceyear}Number of Observations by Race/Ethnicity and Survey Year in Our Analyses", fig.width=8, fig.height=6, warning=F, message=F}
+
+aFigures$fig_barraceyear
+
+
+```
+
+Figure \ref{fig:corr} provides a correlation matrix of the variables used in Figure 2 in the analysis. Only two of the covariates show any meaningful correlation: the dummy for Republican and the dummy for Democrat. This much is unsurprising since those two variables are mutually exclusive and serve as fixed effects communicating the effect of self-identifying with one of the two major parties in the U.S. relative to the baseline of self-identified independents and third-party supporters. No two other variables correlate in any meanginful way that would serve as an estimation problem in the models we report in the manuscript.
+
+
+```{r corr, eval=T, echo=F, results="asis", fig.cap="\\label{fig:corr}A Correlation Matrix of the Variables Used in the Analysis", fig.width=11, fig.height=7, warning=F, message=F}
+
+
+aFigures$fig_corr
+
+#GGally::ggcorr(corrdat) + theme(legend.position="none")
+```
+
+# The Nexus Between Education and Prejudice
+
+We offer a special section of our analysis to an exploration of the multifaceted relationship between education and prejudice and support for democracy. We do this for a few reasons. One, scholarship identifies that education is a substantively important correlate for both democracy and tolerance. Some of the earliest scholarship on the topic classified an educated citizenry as sine qua non feature for democracy to flourish, bolstering its importance by identifying formal education as a necessary condition for democracy itself [@dewey1916de;  @lipset1959ssr]. More recent analyses on the determinants of democracy have largely bolstered this assertion that education is an important determinant of democracy and the public demand for more democracy [e.g. @barro1999dd; @sanbornthyne2014ld]. These arguments invariably draw in scholarship that highlights how education socializes young people. Education involves rote book-learning but also lowers the cost of some social interactions [@glaeseretal2007wddn], promotes good citizenship by emphasizing involvement and participatory behavior [@glaeseretal2007wddn; @holmes1979iges] and teaches people how to acquire knowledge through reasoned and peaceable debate [@bowlesgintis1976sca]. In essence, education also promotes tolerance and tolerance also promotes democracy. Conventional wisdom holds that all three are mutually reinforcing.
+
+Questions remain about this conventional wisdom in light of current events and more recent scholarship. For example, increasing education may lower social prejudice toward ethnic/racial minorities, as the main results in the manuscript show, but it coincides with an increasing political prejudice [@henrynapier2017ergi] that is *symmetrical* across the political left and political right. It suggests a form of selection because increasing education is itself a form of selection. Individuals often self-select into more education, and increasing educational attainment, especially at the collegiate level, may do well to socialize most students about the importance of democracy, equal opportunity of access for majorities and minorities within a democratic design, and how to accept the presence of ethnic/racial outgroups as co-equals. However, students who still hold those views after selecting into advanced levels of education should be more likely to have a firm grasp on the "undesirable" equality-building features of democracy. This would square with some of Federico's [-@federico2005rper; -@federico2006reir] research that finds negative racial perceptions decrease with more education but the effect of these same negative racial perceptions tends to be stronger among the better educated. It would also match what we observed in Charlottesville in 2017, where a "Unite the Right" rally inspired by Richard Spencer (a two-time college graduate) attracted a significant number of college students who still appeared to hold these views even after exposure to college-level instruction. In other words, the effect of holding onto prejudiced views after higher levels of education may make social prejudice's effect on attitudes against democracy even stronger even if we typically assume these effects cluster on the less educated.
+
+<!-- If social prejudice undercuts democracy, then education conceivably bolsters it. There is a well-developed literature regarding the educational transmission of civic values, which envelopes support for democracy and its attendant features. Indeed, societies have a vested interest in preparing young persons for the burdens of citizenship. In fact, Dewey's (1916) early work argues that high levels of formal educational training are not just conducive to democracy, but requisite for it to flourish. There are various reasons for this connection. First, the classic argument regarding the value of education regards its ability to promote an open environment that leads to the sort of intellectual and material prosperity needed to encourage political development. This is, of course, Lipset's (1959, pg. 79) classic argument, some of which is worth quoting in full: 
+
+> Education presumably broadens men's outlooks, enables them to understand the need for norms of tolerance, restrains them from adhering to extremist and monistic doctrines, and increases their capacity to make rational electoral choices... if we cannot say that a "high" level of education is a sufficient condition for democracy, the available evidence does suggest that it comes close to being a necessary condition. 
+
+While this logic is echoed across and bolstered by a wide range of empirical studies (e.g. Barro 1999; Przeworski et al. 2000; Glaeser et al. 2004; Sanborn and Thyne 2014; Apergis in press), there are at least two other facets of this relationship.  Beyond instantiating thick democratic values, education also promotes the value of civic participation. Simply put, schools teach students that participation is valuable and essential to the survival of democracy. Holmes (1979) notes that educational systems are often designed to promote good citizenship, with special emphasis on involvement and participatory behaviors. 
+
+Finally, schooling conceivably lowers some of the costs of social interactions more generally (Glaeser et al. 2007). While schooling involves rote book-learning, it also promotes socialization features necessary for peaceable exchange by instructing young children how to interact successfully and productively. Hence, education teaches the benefits and value of coordination and communication. If miscommunication leads to costly mistakes for both individuals and groups, education helps facilitate the processes used to effectively communicate needs and demands, which fosters knowledge acquisition and reasoned, peaceable debate (Bowles and Gintis 1976).
+
+If democracy requires a well-educated citizenry to function, then two questions remain. First, is the relative effect of education on attitudes toward democratic alternatives sufficient to offset the negative effect of prejudice on such preferences? While intergroup discrimination is a basic feature of the intergroup paradigm that governs virtually all intergroup exchange (Tajfel 1981), it is unclear whether prejudice is equally distributed among the educated and whether its effects are modulated by education. Thus, second, how does educational attainment filter the effects of social prejudice? Are those who are well-educated but prejudiced less likely to give in to base tendencies to reject democracy? Or, alternatively, are these individuals more likely to have a firm grasp on the "undesirable" equality-building features of democracy, rendering the well-educated-but-prejudiced less willing to commit to democracy? Answering these questions lies at the heart of whether or not prevailing levels of discrimination meaningfully spell danger for democracy.  -->
+
+We explore this nexus between education and prejudice with two different estimations of our main analyses. The first alternate estimation allows the effect of college education and white social prejudice to interact. The second alternate estimation drops the college education variable but treats education as a category, or "random effect", by which the slope of white social prejudice can vary. We present the important results from these models as Figure \ref{fig:interplot} and Figure \ref{fig:randomslopesplot}.
+
+
+```{r educ_interactplot, eval=T, echo=F, results="asis", cache=T, fig.cap="\\label{fig:interplot}Regression Results (a) and Simulated Probabilities (b) of the Interaction Between College Education and Prejudice on Anti-Democratic Orientations", fig.width=14.5, fig.height=16, warning=F, message=F}
+
+multiplot(aFigures$fig_interact_dw, aFigures$fig_interact_sims)
+```
+
+
+Figure \ref{fig:interplot} contains two components. The top component is an abbreviated dot-and-whisker plot that shows just the effect of college education, white social prejudice, and its interaction, noting that the other covariates in the model are estimated but ultimately put in the appendix to draw the reader's attention to the main covariates of interest. The bottom component is a ridgeline plot of simulated probabilities of the likelihood of observing a 1 in the model by different categories of college education and white social prejudice. We annotate the top right of each ridge with 95% confidence intervals surrounding the expected value (i.e. mean probability) from the simulations.
+
+We note that the dot-and-whisker plot does show one important difference between the main results we presented in the manuscript. Namely, allowing college education to interact with the white social prejudice measure creates a statistically significant effect on support for army rule for the constituent term of college education that we did not observe in the main results we provide in the manuscript. Formally, it communicates that the effect of increasing college education on those for whom our white social prejudice measure is zero decreases the likelihood of thinking rule of government by the army would be good for the United States. However, the interaction is statistically insignificant by conventional thresholds. Indeed, only one interactive effect has an effect that can we discern from zero. The interaction between college education and white social prejudice is positive and discernible from zero in the model that explores the outright opposition to having a democracy for the United States.
+
+The thousand simulations we run for each of these three analyses yields some interesting findings. Namely, they offer some illustrative evidence that the effect of white social prejudice on anti-democratic orientations may be higher on those with more education than those with less education. Ultimately, the simulations we run show a lot of overlap among the two-by-two matrix connecting college education and white social prejudice to attitudes in support of a military government for the United States. Generally, white social prejudice has a somewhat large, positive effect on the likelihood of thinking a military government for the United States is good even though the 95% intervals surrounding the mean of the estimations clearly overlap. However, our simulations suggest that the effect of white social prejudice seems to be larger on the college-educated.
+
+We see additional evidence suggesting this divergent effect of white social prejudice by level of education in the models simulating the likelihood of opposing democracy and thinking strongman rule would be good for the United States. Here, the bottom two ridges (i.e. simulations for the college-educated) show much starker effects of white social prejudice on the college-educated than on those who did not complete a college degree. The 95% intervals barely overlap, for which we will note that we are not making an inferential statement here, but the movement we see serves as another noisy signal that the effect of white social prejudice may be higher on the college-educated than on those without at least a four-year university degree. Indeed, the simulations put the college-educated, but prejudiced, white Americans closer to those non-prejudiced white Americans without a college degree. Whereas we commonly assume that a university education opens up minds to appreciate democracy and the importance of broadly enfranchising citizens to participate in matters of governance, the effect of prejudice towards immigrants/foreign workers, people of a different race, and those who speak a different language seems to negate that effect.
+
+Figure \ref{fig:randomslopesplot} offers further evidence that the effect of white social prejudice may actually be stronger at higher levels of education. Here, we re-estimate the three main models from the main results in the appendix, but drop the college education fixed effect and substitute instead education categories as random effects. These education random effect categories are for those respondents without formal education or did not complete primary education, those who stopped their education after primary school, those who did not finish high school/secondary education, high school grads that never went to college, those that went to college but did not complete a four-year degree, those with a bachelors or equivalent four-year degree, and those with an advanced university degree (e.g. J.D., Ph.D., M.D., etc.).[^aa] This estimation allows the slope of the fixed effect of white social prejudice to vary by these levels of the random effect. After estimating these three models, we ran a thousand simulations on each, calculating expected values of the likelihood of an anti-democratic orientation while allowing the white social prejudice fixed effect to vary from 0 to 1 at each level. We report the results of these simulations as expected values (i.e. mean probabilities of an anti-democratic orientation in our simulations) with 95% intervals at each level of education.
+
+[^aa]: The "Some College, No Four-Year Degree" category includes respondents with a traditional two-year associates degree.
+
+```{r educ_randomslopesplot, eval=T, echo=F, results="asis", cache=T, fig.cap="\\label{fig:randomslopesplot}The Effect of White Social Prejudice (as Random Slopes), by Level of Education, on Anti-Democratic Orientations", fig.width=11, fig.height=7.5, warning=F, message=F}
+
+aFigures$fig_educatrmdrs
+
+# Note: proportions of simulations with negative first differences annotated in top right of each ridge.
+# Note: each ridge annotated with the mean of first differences, followed by the 95% intervals around the mean (in parentheses), and the proportions of simulations with negative first differences [in brackets].  
+```
+
+The simulations offer further illustrative evidence that the effect of white social prejudice may be stronger at higher levels of education. Notice that white social prejudice appears to have little effect at lower levels of education. Consider the categories for white Americans who never had any exposure to college. The simulations all unequivocally suggest a positive effect of white social prejudice; i.e. white social prejudice increases the likelihood of an anti-democratic orientation even at lower levels of education. However, the effect is rather small and the 95% intervals surrounding the mean probability from most simulations clearly overlap between those who are tolerant and those whore are intolerant of immigrants/foreign workers, members of a different race, and people who speak a different language. Only one category in our simulations of white Americans at lower levels of education appeared to show a near discernible difference between the tolerant and intolerant. White social prejudice appears to noticeably increase the likelihood of a preference for rule of government by the U.S. army among high school dropouts. This is the lone category that emerges from our simulations of white social prejudice's effect at lower levels of education. Differences start to become clearer among the college-educated. There is no overlap in the simulated effect of white social prejudice among those with a bachelors degree or equivalent in the model estimating opposition to democracy or support for army rule. A similar effect is observed in the effect of white social prejudice in supporting a strong leader for those with an advanced university degree.
+
+Differences start to become clearer at higher levels of education among those with at least some exposure to college. The effect of white social prejudice starts to appear among those with at least some college experience in the army rule and strong leader models, certainly comparing the effect in that category relative to those with a high school diploma and no college experience whatsoever. We start to see clear and discernible differences among the college graduates. There is no overlap in the simulated effect of white social prejudice among those with a bachelors degree or equivalent in the model estimating opposition to democracy. We see only a little overlap in the model estimating support for army rule. We see similar discernible effects emerge among those with an advanced university degree. The 95% intervals do not overlap in the strong leader model, which suggests a clear and discernible effect of white social prejudice on attitudes in support of strongman rule among the most educated white people in the United States. We see only slight overlap in the model estimating support for rule of government by the U.S. army among those with an advanced university degree.
+
+The simulations suggest the effect of white social prejudice may be stronger (i.e. more precise and more reliably positive) at higher levels of education. Notice that the distribution of simulated first differences is not as reliably positive at lower levels of education. More than 15% of the first differences from our simulations are negative for the effect of white social prejudice on those with no formal/incomplete primary education and those who stopped schooling after completing the equivalent of grade school for the two models evaluating support for rule of government by the army and outright opposition to having a democracy in the United States. At higher levels of education, our simulations more reliably yield results in which white social prejudice leads to a greater likelihood of an anti-democratic orientation. There is only one of those ridges for those with at least a high school education in which more than five percent of the simulated first differences were negative. That was for the simulations for those with a high school education (and no college experience) in the army rule estimation.
+
+Notice the top two rows for each of the three models. These are simulated first differences for the effect of white social prejudice on an anti-democratic orientation for those with a four-year university degree and those with an advanced university degree. The first differences here are overwhelmingly positive; indeed there were none in which more than five percent of the simulated first differences were negative. However, it is striking how precisely positive they are. For example, only four in 1,000 total simulations for those with advanced university degrees yielded negative first differences in the opposition to democracy estimation and none were negative for those with a four-year university degree. There were only seven simulations in which there were negative first differences in the support for strongman rule equation, and no simulated first difference was negative for those with an advanced university degree. Overall, the simulated first differences are less likely to be negative as the level of education increases, which offers more clarification and more precision of what Figure \ref{fig:interplot} shows. It may be easy to think that social prejudice may be a force magnifier for those with lower levels of education, but our analysis suggests this is not quite the case. Though increasing education does coincide with increasing support for democracy in the U.S. (i.e. a lower likelihood of an anti-democratic orientation in our model), the effect of white social prejudice appears to be stronger at higher, not lower, levels of education.
+
+
+# Robustness Tests and Alternate Specifications
+
+We use this section of the appendix to detail some robustness tests we ran to check how sensitive our inferences are to the models we ran. We also use this section to include full results of some abbreviated models we ran and displayed in the manuscript. We facilitate the reader's experience with this appendix by offering informative subsections so that the reader can jump to a particular analysis from the table of contents we include on the first page. We will also summarize the main takeaways from our robustness tests in list format.
+
+- Our findings are not sensitive to the choice of optimizer. We conduct numerous robustness tests of our main models to illlustrate this.
+- There is no robust effect of social prejudice on anti-democratic orientations for non-white respondents in the WVS data. This offers an empirical justification for our argument about white social prejudice in the United States.
+- We experiment with different estimations of the white social prejudice measure. There is no robust effect of attitudes toward Muslims or Jews as potential neighbors on anti-democratic orientations, though these categories were no longer listed after the fourth wave in 1999. The "militant minority" option is biased in the measurement sense and its effect on anti-democratic orientations actually drifts negative. Anti-LGBT responses do have positive and significant effects in two of three models. These four alternate options, when included in our white social prejudice measure, do not change the inferences we report in the manuscript. Importantly, re-estimating our models while looping through all the neighbor prompts do not consistently yield discernible effects on anti-democratic orientations and that a respondent saying s/he would not want, for example, a heavy drinker or an emotionally unstable person is not enough to induce opposition to democracy or support for authoritarian alternatives.
+- We experiment with seven different estimations that account for concerns of spatial and temporal heterogeneity in the data. These include a combination of fixed effects, random effects, and subsetting the data to just the particular survey wave. Our findings are remarkably robust to almost all estimations. There were only two cases in which we could not reject the null hypothesis: the oppose-democracy model in 1995 and the army-rule model in 1999. However, we think it important to highlight this a successful replication rate of 91.67% in the combined 24 models we report in Figure \ref{fig:fuckitwelldoitlive}.
+
+## Optimizer Checks
+
+We start with a brief discussion of the parameter optimization for the models we ran and present in the manuscript. We ran a series of generalized linear mixed effects models with weakly informative Wishart priors on the covariance matrices. For convenience, we opted for parameter optimization through the bound optimization by quadratic approximation (`BOBYQA`) method [c.f. @powell2009bobyqa]. The standard generalized linear mixed effects model estimation does parameter optimization through a combination of `BOBYQA` and the @neldermead1965smfm "downhill simplex" method. This approach is "standard" for estimation but, in practice, creates much longer computation times as the optimization goes through a series of convergence checks.
+
+We test whether this optimization choice we made for convenience may have changed the results of our model. We re-estimated the three models we report in the manuscript with a battery of different optimizers. These are the aforementioned Nelder-Mead method and `BOBYQA` methods. We also use the same models but permit additional stopping criteria through non-linear optimization (`nlopt`) if the optimization procedures believes it has found the optimum. This speeds up computation at the expense of additional convergence checks. Additional optimization methods include large-scale, quasi-Newton, bound-constrained optimization of the @byrdetal1995lma method (`L-BFGS-B`), iterative derivative-free *k*-bounded optimization of the @neldermead1965smfm method (`nmkb`) [@kelley1999imo], and non-linear minimization with box constraints (`nlminb`) [c.f. @facchineietal1998asna].
+
+We briefly communicate how these different optimizers do not at all influence the results. Figure \ref{fig:optimllk} is a comparison of the log-likelihoods for these different optimizers across the three main models we report in the manuscript. Figure \ref{fig:optimwnneighb} compares the coefficient and standard errors (95% intervals) for the white social prejudice variable across these multiple parameter optimizations. Notice there is almost zero difference across these different parameter optimizations. This suggests the results we report in the manuscript are not sensitive to the parameter optimization we chose for computational convenience.
+
+
+```{r optimllk, eval=T, echo=FALSE, tidy = TRUE, size="small", results="asis", warning=F, message=F, fig.cap="\\label{fig:optimllk}A Comparison of the Log-Likelihoods from Different Parameter Optimization Procedures", fig.height=6, fig.width=8}
+
+aFigures$fig_optimllk
+```
+
+
+```{r optimwnneighb, eval=T, echo=FALSE, tidy = TRUE, size="small", results="asis", warning=F, message=F, fig.cap="\\label{fig:optimwnneighb}A Comparison of the Coefficients and Standard Errors for the White Social Prejudice Variable from Different Parameter Optimization Procedures", fig.height=6, fig.width=8}
+
+aFigures$fig_optimwnneighb
+
+```
+
+## There Is No Robust Effect of Social Prejudice on Non-White Respondents
+
+Our theoretical argument focuses on white Americans and we justify this in the manuscript with our review of U.S. history and academic literature on prejudice and tolerance. However, there is good reason to wonder if the effect is generalizable to all Americans, even those who are not white. This is especially important given that the reader could interpret our argument about democracy as opportunity of access as cutting both ways.
+
+```{r nwmodelshux, eval=T, echo=FALSE, tidy = TRUE, size="small", cache=TRUE, results="asis", warning=F, message=F}
+
+aTables$tab_nwmodels %>%
+  print_latex()
+
+```
+
+We subset the data to non-white respondents across the third through sixth waves of World Values Survey (WVS) data and re-estimated the three main analyses we report in Figure 2 in the manuscript. The results show there is no robust effect of social prejudice on anti-democratic orientations for non-white respondents. Only the strong leader model (`AM1`) had a statistically significant effect. The lower bounds of the 95% intervals surrounding the coefficient estimates in the army rule and opposition to democracy models clearly overlap with zero. All told, Table \ref{tab:nwmodelstab} offers an empirical justification of our decision to focus on the effect of social prejudice on white Americans. Our argument is aggrieved white Americans perceive democracy as empowering unwelcome ethnic/racial minorities with an equal opportunity of access to power beyond the minority's numerical endowment. This leads to an anti-democratic orientation we observe among white Americans if these respondents do not view these groups as welcome in their life. However, we do not observe a robust effect of this social prejudice for non-white Americans.
+
+## Alternate Estimations of White Social Prejudice Do Not Change Our Inferences
+
+We also consider whether the inferences we report in the manuscript are sensitive to the measure of white social prejudice we devised. The ridgeline plots in the manuscript's Figure 3 show a discernible robustness in our simulations of the 12 different models we ran. Only one of the thousand simulations of those 12 models resulted in a distribution of first differences in which more than 5% of the first differences were negative. That was the simulated first differences for the effect of not wanting a neighbor who spoke a different language on attitutes in opposition to democracy. Even then, just 7.6% of those simulated first differences were negative. <!--, which suggests an increase in sample size might extract a more precise signal.[^justtwowaves]
+
+[^justtwowaves]: WVS only added that option in the 2006 and 2011 waves. -->
+
+We explore the effect that some other relevant responses may have on the anti-democratic orientations we analyze. For one, our identification of white social prejudice leveraged responses that identified immigrants/foreign workers, members of a different race, and people who speak a different language as indicators of white social prejudice if the respondent would not welcome these groups as neighbors. There are two other responses of interest: Jews and Muslims. White nationalists routinely single out Muslims as a threat to their perception of American values and anti-Semitism is a long-running strand of bigotry in groups like the Ku Klux Klan. However, our specification opted for common nouns in lieu of proper nouns for the analyses we report in the manuscript. Further, WVS listed Muslims as potential responses in 1995 and 1999 and Jews as an option in the 1999 wave. They regrettably do not appear in the post-9/11 waves in 2006 and 2011.
+
+
+```{r jmmodelshux, eval=T, echo=FALSE, tidy = TRUE, size="small",  results="asis", warning=F, message=F}
+#export_summs(AM1, AM2, AM3, statistics = "nobs",
+#             coefs = c("Age" = "z_age",
+#                         "Age^2" = "I(z_age^2)",
+#                         "Female" = "female",
+#                       "College Educated" = "collegeed",
+#                       "Ideology" = "z_ideo",
+#                       "Ideology^2" = "I(z_ideo^2)",
+#                       "Income Scale" = "z_incscale",
+#                       "Republican" = "gop",
+#                       "Democrat" = "dem",
+#                       "Unemployed" = "unemployed",
+#                       "Emancipative Values" = "z_lemanc",
+#                       "Social Prejudice" = "wnneighb")) %>%
+#  set_caption('Linear regressions of diamond prices') -> dd
+#
+#print_latex(dd, tabular_only = TRUE)
+# 
+# huxreg(jmmodels[[1]], jmmodels[[2]], jmmodels[[3]],
+#                     coefs = c("Age" = "z_age",
+#                          "Age^2" = "I(z_age^2)",
+#                          "Female" = "female",
+#                        "College Educated" = "collegeed",
+#                        "Ideology" = "z_ideo",
+#                        "Ideology^2" = "I(z_ideo^2)",
+#                        "Income Scale" = "z_incscale",
+#                        "Republican" = "gop",
+#                        "Democrat" = "dem",
+#                        "Unemployed" = "unemployed",
+#                        "Emancipative Values" = "z_lemanc",
+#                        "White Social Prejudice" = "wnneighbjm",
+#                        "sd(Year)" = "sd_(Intercept).year"),
+#        statistics = c(N = "nobs")) %>%
+#   filter_all(all_vars(!grepl('(NA)',.))) %>%
+#   set_caption('\\label{tab:jwmodelstab}The Covariates of Democratic Orientations of White Americans in the World Values Survey [with Jews/Muslims Responses] (1995-2011)') -> dd
+# 
+# position(dd) <- "center"
+# width(dd) <- .6
+# # font_size(dd) <- 8
+# 
+# dd %>%
+#   mutate(model1 = ifelse(model1 == "(1)", "AM4", model1),
+#          model2 = ifelse(model2 == "(2)", "AM5", model2),
+#          model3 = ifelse(model3 == "(3)", "AM6", model3)) %>%
+#   # slice(-27) %>%
+#   insert_row(., "","","","", after=25) %>%
+#   insert_row(., "Random Effect", "", "", "", after =26) %>%
+#   insert_row(., "","","","", after=28) %>%
+#   set_italic(., 27, 1, TRUE)  %>% 
+#   insert_row(., "","Strong","Army","Oppose", after=1) %>%
+#   insert_row(., "","Leader","Rule","Democracy", after=2) %>%
+#   set_latex_float(., "!htbp") %>%
+#   set_all_borders(., 2:3, 1:4, 0, TRUE) %>%
+#   insert_row(., "","","","", after=3) %>%
+#   set_top_border(., 4, 1:4, .4, TRUE) %>% 
+#   set_bold(., 1, 2:4, TRUE) %>%
+#   set_italic(., 2:3, 2:4, TRUE) -> dd
+# 
+# dd[28,1] <- "(w/ Jews/Muslims Responses)"
+# 
+# dd %>%
+#   set_font_size(., 28, 1, 7, FALSE) %>%
+# print_latex()
+
+aTables$tab_jmmodels %>% print_latex()
+
+```
+
+
+```{r jmmodelsdwplot, eval=F, echo=F, results="asis",  fig.cap="\\label{fig:jmmodelsdwplot}Dot-and-Whisker Plots of the Covariates of Democratic Orientations of White Americans in the World Values Survey [with Jews/Muslims Responses] (1995-2011)", fig.height=6, fig.width=8, warning=F, message=F}
+
+
+Mdf <- rbind(tidy(AM4) %>% mutate(model = "m1"),
+             tidy(AM5) %>% mutate(model = "m2"),
+             tidy(AM6) %>% mutate(model = "m3")) %>%
+  filter(term != "(Intercept)" & term != "sd_(Intercept).censusr:year" & 
+           term != "sd_(Intercept).censusr" & term != "sd_(Intercept).year")
+
+#plotcap <- paste0("Number of observations: (Model 1: ", prettyNum(nobs(M1), big.mark=","),
+#                  "; Model 2: ", prettyNum(nobs(M2), big.mark=","),
+#                  "; Model 3: ", prettyNum(nobs(M3), big.mark=","),").\nNumber of random effect groups: ",
+#                  sapply(lme4::ranef(M1),nrow)["censusr:year"], " (region-years), ",
+#                  sapply(lme4::ranef(M1),nrow)["censusr"], " (countries), ",
+#                  sapply(lme4::ranef(M1),nrow)["year"], " (years)")
+
+plotcap <- paste0("Number of observations: (Model A4: ", prettyNum(nobs(AM4), big.mark=","),
+                  "; Model A5: ", prettyNum(nobs(AM5), big.mark=","),
+                  "; Model A6: ", prettyNum(nobs(AM6), big.mark=","),")")
+
+dwplot(Mdf, dot_args = list(size = .75, aes(colour = model, shape = model))) %>%
+  relabel_predictors(c(z_age = "Age",
+                      `I(z_age^2)` = "Age^2",
+                      female = "Female",
+                      collegeed = "College Education",
+                      z_ideo = "Ideology",
+                      `I(z_ideo^2)` = "Ideology^2",
+                      z_incscale = "Income Scale",
+                      gop = "Republican",
+                      dem = "Democrat",
+                      unemployed = "Unemployed",
+                      z_lemanc = "Emancipative Values",
+                      wnneighbjm = "White Social Prejudice\n(w/ Jews/Muslims Responses)")) +
+  theme_steve() +
+  geom_vline(xintercept = 0, colour = "grey30", linetype = 2) +
+  xlab("Coefficient Estimate") +
+  scale_colour_discrete(labels = c("Strong Leader (A4)",
+                                   "Army Rule (A5)",
+                                   "Oppose Democracy (A6)"),
+                        name="Models") +
+  scale_shape_discrete(labels = c("Strong Leader (A4)",
+                                   "Army Rule (A5)",
+                                   "Oppose Democracy (A6)"),
+                        name="Models") +
+  labs(caption=plotcap)
+  
+  
+
+```
+
+Table \ref{tab:jwmodelstab} is our re-estimation of Figure 2 from the manuscript for which the white social prejudice measure includes responses from 1995 and 1999 that also identified Muslims or Jews as unwelcome neighbors. Nothing changes in our inferences. The white social prejudice measure is still statistically significant across all three estimations. 
+
+We ran separate models to assess the effect of social prejudice toward Jews or Muslims on anti-democratic orientations and report these results as an abbreviated dot-and-whisker plot in in Figure \ref{fig:jmseps}, focusing on on just the two independent variables of interest. We found no robust effect across all estimations. Only the model estimating the effect of anti-Semitic prejudice on opposition to democracy has any significant effect of the six different estimations we ran. Ultimately, the effect of social prejudice toward Jews (in 1999) and Muslims (in 1995 and 1999) appear to have no robust effect on anti-democratic orientations. The responses do not change the inferences we report in the analyses when we include them into our measure but the two responses, by themselves, have no robust effect.
+
+
+```{r jmseps, eval=T, echo=F, results="asis",  fig.cap="\\label{fig:jmseps}Abbreviated Dot-and-Whisker Plots of the Effect of Prejudice Toward Jews and Muslims on Anti-Democratic Orientations", fig.height=5, fig.width=11, warning=F, message=F}
+
+aFigures$fig_jmseps
+
+
+```
+
+We also consider whether the "militant minority" option affects our inferences. We can see the intuition behind this response for the sake of our argument. "Militant minority" could easily prime a respondent to think of an activist group like the Black Panthers, soliciting an anti-democratic orientation consistent with our argument. It could also conjure jihadi terrorists given its lone appearance in the first WVS wave after the September 11, 2001 terror attacks. However, we fear this term is biased in the measurement sense. A respondent who selects this could be prejudiced against the "minority" or may be reacting to the "militant" magnifier that WVS added. A person could justifiably conjure an image of a potential neighbor sufficiently "militarized" with weaponry in that response and not want that person as a neighbor. We should be careful as researchers to not view that response as necessarily indicating prejudice against an ethnic/racial minority.
+
+We re-ran the models from Figure 2 in the manuscript, including potential responses for "militant minority" in the 2006 wave in our white social prejudice variable. The results we report in Table \ref{tab:mmmodelstab} are substantively identical to Figure 2 in the manuscript. This holds even though the effect of the "militant minority" treatment drifts negative, per the individual regressions we ran and summarize as an abbreviated dot-and-whisker plot in Figure \ref{fig:mmseps}. Table \ref{tab:mmmodelstab} and Figure \ref{fig:mmseps} offer important takeaways similar to Table \ref{tab:jwmodelstab} and Figure \ref{fig:jmseps}. Alternate responses consistent with white social prejudice do not change our inferences when we add them to our measure but these alternate responses, by themselves, have no robust effect on anti-democratic orientations. Figure 3 (in the manuscript) highlights how the effect of the three categories we included in our measure are robust as individual indicators in a model, itself a form of a robustness test for the effect of white social prejudice on anti-democratic orientations of white Americans.
+
+```{r mmmodelshux, eval=T, echo=FALSE, tidy = TRUE, size="small",  results="asis", warning=F, message=F}
+
+aTables$tab_mmmodels %>% print_latex()
+
+```
+
+```{r mmseps, eval=T, echo=F, results="asis", fig.cap="\\label{fig:mmseps}Abbreviated Dot-and-Whisker Plots of the Effect of Not Wanting a 'Militant Minority' for a Neighbor on Anti-Democratic Orientations", fig.height=5, fig.width=11, warning=F, message=F}
+
+aFigures$fig_mmseps
+
+
+```
+
+We do a similar estimation approach that looks at the effect of anti-LGBT responses captured in the "homosexuals" item. Anti-LGBT prejudice has been a recurring theme in the Ku Klux Klan [@gibson1987hkkk, for example] and it is not uncommon for white people who espouse prejudice toward members of a difference race or immigrants to also espouse prejudice toward LGBT individuals. We develop two means to explore the effect of anti-LGBT prejudice on anti-democratic orientations. First, we code a 1 for any respondent who would not want a homosexual (per the item prompt) as a neighbor in addition to any of the three main items we code as part of our prejudice measure. Further, we look at the effect of this item in particular on anti-democratic orientations.
+
+```{r lgbtmodelstab, eval=T, echo=FALSE, tidy = TRUE, size="small",  results="asis", warning=F, message=F}
+
+aTables$tab_lgbtmodels %>% print_latex()
+
+```
+
+The results from  Table \ref{tab:lgbtmodelstab} tell an identical story we communicate in this appendix and the manuscript. Namely, the results are substantively identical despite only a modest correlation between the main social prejudice measure and the one that also includes cases where white individuals did not want a gay person as a neighbor (*r* = `r round(with(Data, cor(wnneighb, wnneighblgbt, use="complete.obs")), 3) `). The inclusion of this variable into the main measure does not meaningfully change the inferences we report in the manuscript or this appendix. Separate models summarized in Figure \ref{fig:lgbtseps} that look at the effect of anti-LGBT prejudice for white respondents on anti-democratic orientations do show positive coefficients in all three models. These would be consistent with a hypothesis of the effect this kind of prejudice should have since democracies provide protections for and access to LGBT people, who are unwelcome minorities for people with anti-LGBT prejudice. However, the coefficients are discernible from zero in only two of the three models and do not have the same kind of precision of the coefficients we show in the main paper.
+
+```{r lgbtseps, eval=T, echo=F, results="asis", fig.cap="\\label{fig:lgbtseps}Abbreviated Dot-and-Whisker Plots of the Effect of Not Wanting a Gay Person for a Neighbor on Anti-Democratic Orientations", fig.height=5, fig.width=11, warning=F, message=F}
+
+aFigures$fig_lgbtseps
+
+
+```
+
+## The Effect of All the Neighbor Prompts on Anti-Democratic Orientations
+
+We have good theoretical and practical reason to focus our analyses to white prejudice against racial and ethnic minorities like immigrants, people of a different race, and people who speak a different language. However, it might be the case that any of these prompts might coincide with an anti-democratic orientation and that the analyses we report in the manuscript, and elsewhere in the appendix, amount to test that just scrutinizes white supremacists. Toward that end, we loop across all responses in the individual neighbor prompts and report them as abbreviated dot-and-whisker plots in Figure \ref{fig:neighbseps}.[^neighbsepsobs]
+
+```{r neighbseps, eval=T, echo=F, results="asis", fig.cap="\\label{fig:neighbseps}Abbreviated Dot-and-Whisker Plots of the Effect of All the Neighbor Prompts on Anti-Democratic Orientations", fig.height=7, fig.width=11, warning=F, message=F}
+
+aFigures$fig_neighbseps
+
+
+```
+
+
+The results lend some confidence to our argument that there is good theoretical and practical reason to focus on white prejudice against racial and ethnic minorities. Simply listing heavy drinkers as unwelcome neighbors, for example, was not enough to induce an anti-democratic orientation in any survey prompt. Listing emotionally unstable people also did not have a robust effect across all three models. There would be no theoretical reason to believe it should have that effect. Indeed, there are only four of the neighbor prompts that are positive and statistically significant at least at the .1 level for all three models. Three of them are the prompts we include in our white social prejudice variable. The only other one is the responses toward people with AIDS.
+
+[^neighbsepsobs]: The prompts for extremists, Jews, and militant minorities appear in just one survey wave and thus have no temporal heterogeneity to model. The prompts for criminals, those who speak a different language, people from a different religion, emotionally unstable people, Muslims, and unmarried people appear in just two survey waves. We model those analyses with fixed effects for survey year. All other prompts appear in all four waves of the WVS data and we model those with random effects for the survey year.
+
+## Experimenting With Different Considerations of Temporal (and Spatial) Heterogeneity
+
+We chose to be flexible with how we address unit heterogeneity in the data. We modeled the temporal heterogeneity but it is conceivable there is also spatial heterogeneity in which Americans in the South, for example, cluster more than Americans in the Northeast. Thus, we follow @schmidtcatranfairbrother2015remm, who argue that the best way to handle spatial and temporal heterogeneity in survey data like the World Values Survey is to include random effects for the spatial unit, the year of observation, and the intersection of the spatial unit and the year. This creates random effects in our analysis for the survey year (i.e. 1995, 1999, 2006, 2011), the Census region (i.e. Midwest, Northeast, South, West), and the Census region-year (e.g. South-2011, West-1995, Midwest-2006). We model all random effects with weakly informative Wishart priors on the covariance matrices [c.f. @chungetal2015wip] given the relatively few number of categories. We report these analyses in Table \ref{tab:censusyeartab}, showing that the results are almost identical to the inferences we report in the manuscript's Figure 2.
+
+```{r censusryearmodels, eval=F, echo=FALSE, tidy = TRUE, size="small",  results="asis", warning=F, message=F}
+# source('analysis/3-analysis.R')
+# library(lme4)
+library(blme)
+
+censusryearmodels = lapply(setNames(dvs, dvs), function(var) {
+  form = paste(var, "~ z_age + I(z_age^2) + female +
+              collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+              + z_lemanc  + wnneighb + (1 | year) + (1 | censusr) + (1 | censusr:year)")
+  bglmer(form, data=subset(Data, raceethnic == "White"), family=binomial(link = "logit"),
+         control=glmerControl(optimizer="bobyqa",
+                              optCtrl=list(maxfun=2e5)))
+})
+
+```
+
+```{r censusyearhux, eval=T, echo=FALSE, tidy = TRUE, size="small", results="asis", warning=F, message=F}
+
+
+aTables$tab_censusyear %>% print_latex()
+
+```
+
+
+```{r censusryearmodelsplot, eval=F, echo=F, results="asis", fig.cap="\\label{fig:censusyearsdwplot}Dot-and-Whisker Plots of the Covariates of Democratic Orientations of Non-White Americans in the World Values Survey [With Added Census and Census-Year Random Effects] (1995-2011)", fig.height=6, fig.width=8, warning=F, message=F}
+
+
+Mdf <- rbind(tidy(AM10) %>% mutate(model = "m1"),
+             tidy(AM11) %>% mutate(model = "m2"),
+             tidy(AM12) %>% mutate(model = "m3")) %>%
+  filter(term != "(Intercept)" & term != "sd_(Intercept).censusr:year" & 
+           term != "sd_(Intercept).censusr" & term != "sd_(Intercept).year")
+
+#plotcap <- paste0("Number of observations: (Model 1: ", prettyNum(nobs(M1), big.mark=","),
+#                  "; Model 2: ", prettyNum(nobs(M2), big.mark=","),
+#                  "; Model 3: ", prettyNum(nobs(M3), big.mark=","),").\nNumber of random effect groups: ",
+#                  sapply(lme4::ranef(M1),nrow)["censusr:year"], " (region-years), ",
+#                  sapply(lme4::ranef(M1),nrow)["censusr"], " (countries), ",
+#                  sapply(lme4::ranef(M1),nrow)["year"], " (years)")
+
+plotcap <- paste0("Number of observations: (Model A10: ", prettyNum(nobs(AM10), big.mark=","),
+                  "; Model A11: ", prettyNum(nobs(AM11), big.mark=","),
+                  "; Model 12: ", prettyNum(nobs(AM12), big.mark=","),")")
+
+dwplot(Mdf, dot_args = list(size = .75, aes(colour = model, shape = model))) %>%
+  relabel_predictors(c(z_age = "Age",
+                      `I(z_age^2)` = "Age^2",
+                      female = "Female",
+                      collegeed = "College Education",
+                      z_ideo = "Ideology",
+                      `I(z_ideo^2)` = "Ideology^2",
+                      z_incscale = "Income Scale",
+                      gop = "Republican",
+                      dem = "Democrat",
+                      unemployed = "Unemployed",
+                      z_lemanc = "Emancipative Values",
+                      wnneighb = "White Social Prejudice")) +
+  theme_steve() +
+  geom_vline(xintercept = 0, colour = "grey30", linetype = 2) +
+  xlab("Coefficient Estimate") +
+  scale_colour_discrete(labels = c("Strong Leader (A10)",
+                                   "Army Rule (A11)",
+                                   "Oppose Democracy (A12)"),
+                        name="Models") +
+  scale_shape_discrete(labels = c("Strong Leader (A10)",
+                                   "Army Rule (A11)",
+                                   "Oppose Democracy (A12)"),
+                        name="Models") +
+  labs(caption=plotcap)
+  
+  
+
+```
+
+Finally, we ran multiple versions of the same model to note that different techniques for modeling temporal and/or spatial heterogeneity have no effect on the inferences we report in the analyses. Figure \ref{fig:fuckitwelldoitlive} is an abbreviated dot-and-whisker plot that includes the estimates of white social prejudice for estimations in which we model temporal and/or spatial heterogeneity with 1) just year random effects (i.e. the results we report in the manuscript), 2) region, region-year, and year random effects (i.e. abbreviated from Table \ref{tab:censusyeartab}), 3) region and year fixed effects, and 4) fixed effects for just the year.[^baseline] We also re-run the models subsetting the data to each year (i.e. individual models for 1995, 1999, 2006, and 2011).
+
+[^baseline]: The baselines in the fixed effects models are for 1995 (survey year) and the Midwest (Census region).
+
+Figure  \ref{fig:fuckitwelldoitlive} shows all these effects in the fixed effects and random effects models are almost identical. The differences between these estimates are, at most, in the hundredths of a decimal point of the coefficient and associated *z* statistic. The results for the individual models that subset the analyses to the individual survey year are worth highlighting. We want the reader to notice we that we observe significant effects in all but two estimations. These were the opppose-democracy model in 1995 and the army-rule model in 1999, which Figure \ref{fig:barraceyear} suggests were going to be low-power analyses. Ten of the other 12 estimations yield significant results. 
+
+We think this is an important finding from our paper. Our main analyses leverage all four waves together, offering random effects for the survey years, to show a general relationship between white social prejudice and opposition to democracy. This is a current and salient policy discussion in the age of Trump and there is no shortage of analyses in major newspapers and academic blogs about how Trump's rhetoric erodes democratic norms and compromises democratic longevity in the United States. Our major survey data sets are starting to track these developments as well. However, we find these trends emerging as early as 1995, a full 20 years before then-candidate Trump first descended his gilded escalator to begin his presidential campaign with a statement that Mexicans were rapists and thugs. Our findings at least uncover the framework that allowed for Trump's rise to power.
+
+
+```{r fuckitwelldoitlive, eval=TRUE, echo=FALSE, tidy = TRUE, results="asis", warning=F, message=F, fig.cap="\\label{fig:fuckitwelldoitlive}Dot-and-Whisker Plots of the Effect of White Social Prejudice Across Multiple Specifications for Temporal/Spatial Heterogeneity", fig.height=8, fig.width=8}
+# M1 <- bglmer(sld ~ z_age + I(z_age^2) + female +
+#               collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#               + z_lemanc  + wnneighb  + (1 | year),
+#             data=subset(Data, raceethnic == "White"), family=binomial(link = "logit"),
+#             control=glmerControl(optimizer="bobyqa",
+#                                  optCtrl=list(maxfun=2e5)))
+# 
+# M2 <- bglmer(ard ~ z_age + I(z_age^2) + female +
+#               collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#               + z_lemanc  + wnneighb + (1 | year),
+#             data=subset(Data, raceethnic == "White"), family=binomial(link = "logit"),
+#             control=glmerControl(optimizer="bobyqa",
+#                                  optCtrl=list(maxfun=2e5)))
+# 
+# M3 <- bglmer(hdd ~ z_age + I(z_age^2) + female +
+#               collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#               + z_lemanc  + wnneighb  + (1 | year),
+#             data=subset(Data, raceethnic == "White"), family=binomial(link = "logit"),
+#             control=glmerControl(optimizer="bobyqa",
+#                                  optCtrl=list(maxfun=2e5)))
+# 
+# AM13 <- glm(sld ~ z_age + I(z_age^2) + female +
+#               collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#               + z_lemanc  + wnneighb  + factor(year),
+#             data=subset(Data, raceethnic == "White"), family=binomial(link = "logit"))
+# 
+# AM14 <- glm(ard ~ z_age + I(z_age^2) + female +
+#               collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#               + z_lemanc  + wnneighb  + factor(year),
+#             data=subset(Data, raceethnic == "White"), family=binomial(link = "logit"))
+# 
+# AM15 <- glm(hdd ~ z_age + I(z_age^2) + female +
+#               collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#               + z_lemanc  + wnneighb  + factor(year),
+#             data=subset(Data, raceethnic == "White"), family=binomial(link = "logit"))
+# 
+# AM16 <- glm(sld ~ z_age + I(z_age^2) + female +
+#               collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#               + z_lemanc  + wnneighb  + factor(year) + factor(censusr),
+#             data=subset(Data, raceethnic == "White"), family=binomial(link = "logit"))
+# 
+# AM17 <- glm(ard ~ z_age + I(z_age^2) + female +
+#               collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#               + z_lemanc  + wnneighb  + factor(year) + factor(censusr),
+#             data=subset(Data, raceethnic == "White"), family=binomial(link = "logit"))
+# 
+# AM18 <- glm(hdd ~ z_age + I(z_age^2) + female +
+#               collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#               + z_lemanc  + wnneighb  + factor(year) + factor(censusr),
+#             data=subset(Data, raceethnic == "White"), family=binomial(link = "logit"))
+# 
+# # Year Subsets
+# ## Strong Leaders...
+# AM19 <- glm(sld ~ z_age + I(z_age^2) + female +
+#                  collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#                  + z_lemanc  + wnneighb,
+#              data=subset(Data, raceethnic == "White" & year == 1995), family=binomial(link = "logit"))
+# 
+# AM20 <- glm(sld ~ z_age + I(z_age^2) + female +
+#                  collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#                  + z_lemanc  + wnneighb,
+#              data=subset(Data, raceethnic == "White" & year == 1999), family=binomial(link = "logit"))
+# 
+# AM21 <- glm(sld ~ z_age + I(z_age^2) + female +
+#                  collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#                  + z_lemanc  + wnneighb,
+#              data=subset(Data, raceethnic == "White" & year == 2006), family=binomial(link = "logit"))
+# 
+# AM22 <- glm(sld ~ z_age + I(z_age^2) + female +
+#                  collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#                  + z_lemanc  + wnneighb,
+#              data=subset(Data, raceethnic == "White" & year == 2011), family=binomial(link = "logit"))
+# 
+# ## Army Rule now...
+# AM23 <- glm(ard ~ z_age + I(z_age^2) + female +
+#                  collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#                  + z_lemanc  + wnneighb,
+#              data=subset(Data, raceethnic == "White" & year == 1995), family=binomial(link = "logit"))
+# 
+# AM24 <- glm(ard ~ z_age + I(z_age^2) + female +
+#                  collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#                  + z_lemanc  + wnneighb,
+#              data=subset(Data, raceethnic == "White" & year == 1999), family=binomial(link = "logit"))
+# 
+# AM25 <- glm(ard ~ z_age + I(z_age^2) + female +
+#                  collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#                  + z_lemanc  + wnneighb,
+#              data=subset(Data, raceethnic == "White" & year == 2006), family=binomial(link = "logit"))
+# 
+# AM26 <- glm(ard ~ z_age + I(z_age^2) + female +
+#                  collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#                  + z_lemanc  + wnneighb,
+#              data=subset(Data, raceethnic == "White" & year == 2011), family=binomial(link = "logit"))
+# 
+# ## Oppose Democracy...
+# AM27 <- glm(hdd ~ z_age + I(z_age^2) + female +
+#                  collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#                  + z_lemanc  + wnneighb,
+#              data=subset(Data, raceethnic == "White" & year == 1995), family=binomial(link = "logit"))
+# 
+# AM28 <- glm(hdd ~ z_age + I(z_age^2) + female +
+#                  collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#                  + z_lemanc  + wnneighb,
+#              data=subset(Data, raceethnic == "White" & year == 1999), family=binomial(link = "logit"))
+# 
+# AM29 <- glm(hdd ~ z_age + I(z_age^2) + female +
+#                  collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#                  + z_lemanc  + wnneighb,
+#              data=subset(Data, raceethnic == "White" & year == 2006), family=binomial(link = "logit"))
+# 
+# AM30 <- glm(hdd ~ z_age + I(z_age^2) + female +
+#                  collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#                  + z_lemanc  + wnneighb,
+#              data=subset(Data, raceethnic == "White" & year == 2011), family=binomial(link = "logit"))
+# 
+# 
+# 
+# #slmods = noquote(c("M1", "AM10", "AM13", "AM16"))
+# 
+# tidy(M1) %>% mutate(Model = "Manuscript Results") %>%
+#   bind_rows(., tidy(censusryearmodels[[1]])) %>% 
+#   mutate(Model = ifelse(is.na(Model), "Region, Year, and Region-Year Random Effects", Model)) %>%
+#   bind_rows(., tidy(AM13)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Year Fixed Effects", Model)) %>%
+#   bind_rows(., tidy(AM16)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Region & Year Fixed Effects", Model)) %>%
+#   bind_rows(., tidy(AM19)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Subset: 1995", Model)) %>%
+#   bind_rows(., tidy(AM20)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Subset: 1999", Model)) %>%
+#   bind_rows(., tidy(AM21)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Subset: 2006", Model)) %>%
+#   bind_rows(., tidy(AM22)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Subset: 2011", Model)) %>%
+#   filter(term == "wnneighb") %>%
+#   mutate(dv = "Strong Leader") -> slmods
+# 
+# tidy(M2) %>% mutate(Model = "Manuscript Results") %>%
+#   bind_rows(., tidy(censusryearmodels[[2]])) %>% 
+#   mutate(Model = ifelse(is.na(Model), "Region, Year, and Region-Year Random Effects", Model)) %>%
+#   bind_rows(., tidy(AM14)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Year Fixed Effects", Model)) %>%
+#   bind_rows(., tidy(AM17)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Region & Year Fixed Effects", Model)) %>%
+#   bind_rows(., tidy(AM23)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Subset: 1995", Model)) %>%
+#   bind_rows(., tidy(AM24)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Subset: 1999", Model)) %>%
+#   bind_rows(., tidy(AM25)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Subset: 2006", Model)) %>%
+#   bind_rows(., tidy(AM26)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Subset: 2011", Model)) %>%
+#   filter(term == "wnneighb") %>%
+#   mutate(dv = "Army Rule") -> armods
+# 
+# tidy(M3) %>% mutate(Model = "Manuscript Results") %>%
+#   bind_rows(., tidy(censusryearmodels[[3]])) %>% 
+#   mutate(Model = ifelse(is.na(Model), "Region, Year, and Region-Year Random Effects", Model)) %>%
+#   bind_rows(., tidy(AM15)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Year Fixed Effects", Model)) %>%
+#   bind_rows(., tidy(AM18)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Region & Year Fixed Effects", Model)) %>%
+#   bind_rows(., tidy(AM27)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Subset: 1995", Model)) %>%
+#   bind_rows(., tidy(AM28)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Subset: 1999", Model)) %>%
+#   bind_rows(., tidy(AM29)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Subset: 2006", Model)) %>%
+#   bind_rows(., tidy(AM30)) %>%
+#   mutate(Model = ifelse(is.na(Model), "Subset: 2011", Model)) %>%
+#   filter(term == "wnneighb") %>%
+#   mutate(dv = "Oppose Democracy") -> hdmods
+# 
+# interval1 <- -qnorm((1-0.9)/2)  # 90% multiplier
+# interval2 <- -qnorm((1-0.95)/2) # 95% multiplier
+# 
+# bind_rows(slmods, armods, hdmods) %>%
+#   ggplot(.) + facet_wrap(~dv) + theme_steve() +
+#     geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+#     geom_linerange(aes(x = Model, ymin = estimate - std.error*interval1,
+#                        ymax = estimate + std.error*interval1),
+#                    lwd = 1, position = position_dodge(width = 1/2)) + 
+#     geom_pointrange(aes(x = Model, y = estimate, ymin = estimate - std.error*interval1, # interval2
+#                         ymax = estimate + std.error*interval1), # interval2
+#                     lwd = 1/2, position = position_dodge(width = 1/2),
+#                      fill = "WHITE") + 
+#     coord_flip() + xlab("") + ylab("")
+
+#for (i in slmods) {
+# tidy(i) %>%
+#    filter(term == "wnneighb") %>%
+#    mutate(Model = i,
+#           Category = "Strong Leader") -> stuff
+#  return(stuff)  
+#}
+
+aFigures$fig_oreilly
+
+```
+
+We choose to present the results we do because we think the mixed effects modeling framework is flexible for the nature of the data. We also think the random effect for the survey year is an appropriate focus because of a concern for how these attitudes might be increasing over time in the U.S. Ultimately, different specifications of spatial and temporal heterogeneity have no effect on the inferences we report in the manuscript.
+
+## Estimating the Main Models as Ordinal Logistic Regressions
+
+We next consider whether our decision to condense the ordinal nature of the survey items to binary indicators had any effect on our inferences for the hypothesis of interest. In theory, condensing an ordinal item to a categorical/"binary" variable should have no biasing effect on the regression parameters. It instead introduces noise into the parameters by condensing information on an ordinal scale to a binary "there" or "not there" distinction [@berryfeldman1985mrp]. Our decision to present the main analyses as logistic regressions rather than ordinal logistic regressions comes from a practical concern. We find the logistic regression to be more intuitive to readers and logistic regressions spare the reader from having to bother with the ancillary regression parameters (e.g. the thresholds) that come with the ordinal regression framework. However, we conduct a robustness test to see if this decision for our convenience had any effect on the main independent variable of interest.
+
+```{r ordinal-models, eval=F, echo=FALSE, tidy = TRUE, size="small", results="asis", warning=F, message=F}
+# source('analysis/3-analysis.R')
+# library(lme4)
+library(ordinal)
+OM1 <- clmm(factor(strongleader) ~ z_age + I(z_age^2) + female +
+              collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+              + z_lemanc  + wnneighb + (1 | year),
+            data=subset(Data, raceethnic == "White"),
+            link="logit")
+
+OM2 <- clmm(factor(armyrule) ~ z_age + I(z_age^2) + female +
+              collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+              + z_lemanc  + wnneighb + (1 | year),
+            data=subset(Data, raceethnic == "White"), link="logit")
+
+OM3 <- clmm(factor(havedem) ~ z_age + I(z_age^2) + female +
+              collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+              + z_lemanc  + wnneighb + (1 | year),
+            data=subset(Data, raceethnic == "White"),link="logit")
+```
+
+```{r ordinal-tab, eval=TRUE, echo=FALSE, tidy = TRUE, results="asis", message=F, warning=F}
+# library(texreg)
+# ordinaltab <- capture.output(texreg(list(OM1, OM2, OM3), digits=3,
+#                      caption="Ordinal Mixed Effects Models of Democratic Orientations of White Americans",
+#                      custom.coef.names=c("Age", "Age-squared",
+#                                          "Female", "College Educated",
+#                                          "Ideology", "Ideology-squared",
+#                                          "Income Scale", "Republican",
+#                                          "Democrat", "Unemployed",
+#                                          "Emancipative Values",
+#                                          "White Social Prejudice",
+#                                          "1|2", "2|3", "3|4"),
+#                      label = "tab:ordinaltab")
+# )
+
+cat(aTables$tab_ordinal, sep="\n")
+```
+
+Table \ref{tab:ordinaltab} shows the effect of white social prejudice to be effectively the same when we model the ordinal nature of the survey responses in lieu of condensing them to binary variables. The effect of a white American not wanting a neighbor who was an immigrant, of a different race, or spoke a different language on democratic orientations is statistically significant across all three estimations. Here, white social prejudice increases the value a white American puts on having a strong leader unencumbered by legislative or electoral oversight, increases the value a white American places on having the U.S. army rule the government, and *decreases* the value a white American puts on having a democratic political system in the United States. The inferences are identical to what we report in the manuscript and elsewhere in this appendix.
+
+## Alternate Measures of Support for American Democracy
+
+We offer a final set of robustness tests for the main dependent variables we model in the manuscript. First, we are interested in an alternate measure for the "having a democratic political system" question we model. That prompt is a regular staple in the WVS data since the third wave, asking the respondent to say whether "having a democratic political system" is very good, good, bad, or very bad for the United States. The fifth and sixth waves feature an another question that gets at the same concept. This question prompts the reader to answer "how important is it for you to live in a country that is governed democratically?" The responses range from 1 (not at all important) to 10 (absolutely important).
+
+We ran two linear models on this item. The first resembles Figure 2 in the manuscript while the second interacts college education with our white social prejudice measure. Mixed effects modeling collapses to clasical regression when there are only two groups (i.e. survey years) so we forgo the mixed effects framework and include a fixed effect for 2011 compared to the 2006 survey wave.[^doesntmatter] The only difference in interpretation is we expect the effect to be negative. White social prejudice should decrease the value that white Americans afford to living in democracy.
+
+[^doesntmatter]: Figure \ref{fig:fuckitwelldoitlive} lends support to the idea that different estimations of spatial and temporal heterogeneity have little-to-no effect on the results we report.
+
+```{r demimp, eval=T, echo=F, results="asis",  warning=F, message=F}
+# Data %>% mutate(demimpn = as.numeric(demimp)) -> Data
+
+# 
+# AM13 <- lm(demimp ~ z_age + I(z_age^2) + female +
+#               collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#               + z_lemanc  + wnneighb + factor(year),
+#             data=subset(Data, raceethnic == "White"))
+# 
+# AM14 <- lm(demimp ~ z_age + I(z_age^2) + female +
+#               collegeed + z_ideo + I(z_ideo^2) + z_incscale + gop + dem + unemployed +
+#               + z_lemanc  + wnneighb*collegeed + factor(year),
+#             data=subset(Data, raceethnic == "White"))
+# 
+# huxreg(AM13, AM14,
+#        coefs = c("Age" = "z_age",
+#                          "Age^2" = "I(z_age^2)",
+#                          "Female" = "female",
+#                        "College Educated" = "collegeed",
+#                        "Ideology" = "z_ideo",
+#                        "Ideology^2" = "I(z_ideo^2)",
+#                        "Income Scale" = "z_incscale",
+#                        "Republican" = "gop",
+#                        "Democrat" = "dem",
+#                        "Unemployed" = "unemployed",
+#                        "Emancipative Values" = "z_lemanc",
+#                        "White Social Prejudice" = "wnneighb",
+#                        "White Social Prejudice*College Education" = "collegeed:wnneighb",
+#                  "Year = 2011" = "factor(year)2011")) %>%
+#   filter_all(all_vars(!grepl('(NA)',.))) %>%
+#   set_caption("\\label{tab:demimphux}The Covariates of the Importance of Living in a Democracy for White Americans in the World Values Survey (2006, 2011)") -> dd
+# 
+# 
+# position(dd) <- "center"
+# width(dd) <- .75
+# # number_format(dd) <- NA
+# # font_size(dd) <- 8
+# 
+# dd %>%
+#   mutate(model1 = ifelse(model1 == "(1)", "AM13", model1),
+#          model2 = ifelse(model2 == "(2)", "AM14", model2)) %>%
+#   set_latex_float(., "!htbp") %>%
+#   set_number_format(., 28, 1, NA, byrow = FALSE) %>%
+# print_latex()
+
+aTables$tab_demimp %>% print_latex()
+
+```
+
+Table \ref{tab:demimptab} yields results similar to what we report in the manuscript and elsewhere in the appendix. The white social prejudice measure decreases the value that white Americans afford to living in democracy as much as it makes them open to specific autocratic alternatives. <!--The only major difference we find is there is no significant effect of the interaction in the second model that interacts college education with white social prejudice. -->
+
+Further, we create two indices---one additive and another as a latent estimate from the factor scores of a graded response model [c.f. @samejima1969ela]---and estimate the analyes as linear mixed effects models. The results in Table \ref{tab:index} are substantively identical to what we report in the manuscript. This should not be surprising since the coefficients for the white social prejudice variable were robust across all three items that comprise both the additive index and the latent estimate. The additive index and latent estimate models communicate similar effects. We also offer the factor loadings from the graded response model that created the latent estimate. The information we present communicates that even as the three items do well to generally communicate anti-democratic orientations in a cross-national context [e.g. @arielydavidov2011cwr; @miller2017etst], the items do not necessarily cluster together in the United States.
+
+
+```{r tabindex, eval=T, echo=F, results="asis",  warning=F, message=F}
+
+aTables$tab_index %>% print_latex()
+
+
+```
+
+```{r indexfscores, eval=T, echo=F, warning=F, message=F}
+
+Data %>%
+  select(uid, havedemr, strongleader, armyrule) %>% 
+  filter_all(all_vars(!is.na(.))) -> Index
+
+library(mirt)
+IndexM <- mirt(Index[ ,  2:ncol(Index)], model = 1,
+               itemtype = "graded", SE = TRUE, verbose = FALSE)
+
+extract.mirt(IndexM, "F") %>% tbl_df() %>%
+  mutate(var = c("Oppose Democracy", "Strong Leader", "Army Rule")) %>%
+  select(var, F1) %>%
+  mutate(F1 = round(F1, 3)) %>%
+  kable(., booktabs=T,
+        col.names = c("Variable", "Factor Loading"),
+        align = c("l","c"),
+        caption = "The Factor Loadings from the Graded Response Model for the Latent Estimate")
+
+```
+
+
+Finally, we unpack the implications of @welzel2013fr. Welzel created a four-item index of what he terms "emancipative values", which consist of sub-values of "autonomy", "choice", "equality", and "voice." The voice component of the emancipative values framework is of particular interest here because it also communicates democratic orientations similar to the ones we measure through the manuscript and appendix. After all, the "voice" variable is measuring the relative importance the respondent gives to allowing more people more say in politics as both an important national priority and a personal political priority. The question prompt is deliberately worded so that the "people" in question are not the respondent, but others different from the respondent. Per our theory, a white American prejudiced against ethnic and racial minorities should be less likely to prioritize allowing more people more say in politics since this should also entail enfranchising the people against whom the respondent is prejudiced.
+
+Table \ref{tab:lvoi} communicates the results of two models that explain variation in the voice variable we estimate and include as part of the emancipative values variable. The first model in Table \ref{tab:lvoi} excludes the other values that comprise the emancipative values variable while the second model includes them as additional covariates. We find robust negative effects for the white social prejudice variable on the voice variable. A white respondent who would not want an immigrant/foreign worker, member of a different race, or a person who speaks a different language as a neighbor scores lower on the voice variable (i.e. is less likely to prioritize giving people more of a say in politics, per the construction of the variable). While we observe evidence that suggests the voice value as a dependent variable to be explained comports nicely with the main analyses we present in the manuscript, the results we provide in Table \ref{tab:emanc}---which breaks apart the emancipative values variable from our main analyses to its four individual components---suggest the voice variable does not have a robust effect on anti-democratic orientations.
+
+```{r tablvoi, eval=T, echo=F, results="asis",  warning=F, message=F}
+
+aTables$tab_lvoi %>% print_latex()
+
+```
+
+```{r tabemanc, eval=T, echo=F, results="asis",  warning=F, message=F}
+
+aTables$tab_emanc %>% print_latex()
+
+```
+
+
+Figure \ref{fig:noemanc} offers a comparison of the results in Figure 2 in the manuscript with another set of analyses that omit the emancipative values variable. After all, the results that @welzel2013fr and @miller2017etst report cross-nationally do not appear to be robust in the United States and it is not clear that the concept has important sway in an analysis confined to just the United States. However, Figure  \ref{fig:noemanc} shows that the result for the coefficient of interest is effectively the same with or without emancipative values included as a statistical control.
+
+
+```{r noemanc, eval=T, echo=F, results="asis",  fig.cap="\\label{fig:noemanc}Abbreviated Dot-and-Whisker Plots of the Effect of White Social Prejudice on Anti-Democratic Orientations (with and without Emancipative Values)", fig.height=5, fig.width=11, warning=F, message=F}
+
+aFigures$fig_noemanc
+
+```
+
+
+Finally, Figure \ref{fig:cai} shows the results of models that drop the emancipative values variable in favor of the child autonomy index of interest to the authoritarianism scholarship [see @stenner2005tad]. Whereas the child autonomy index and the autonomy component of the emancipative values variable are highly correlated (*r* = .704), this test drops the emancipative values variable for the child autonomy index. The figure is purposely abbreviated to highlight just the effect of the child autonomy index and the white social prejudice measure. The results show a significant and negative effect of the child autonomy index  in just two of the three models, though the negative sign is consistent with the intuition from the authoritarianism scholarship. Notice, however, the white social prejudice measure is unaffected.
+
+```{r cai, eval=T, echo=F, results="asis",  fig.cap="\\label{fig:cai}Abbreviated Dot-and-Whisker Plots of the Effect of White Social Prejudice on Anti-Democratic Orientations (with Child Autonomy Index Instead of Emancipative Values)", fig.height=5, fig.width=11, warning=F, message=F}
+
+aFigures$fig_cai
+
+```
