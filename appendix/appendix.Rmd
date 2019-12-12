@@ -41,7 +41,7 @@ anonymous: FALSE
 linkcolor: black
 ---
 
-<!-- Jesus Christ this is a shit ton of mind-numbing busy work... -->
+<!-- I think over 140 robustness tests is a personal best or personal worst, depending on how you want to look at it. :P -->
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(cache=TRUE,
@@ -108,7 +108,7 @@ aFigures <- readRDS("data/aFigures.rds")
 
 \newpage 
 
-\doublespacing
+\singlespacing
 
 # Introduction
 

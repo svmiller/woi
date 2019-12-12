@@ -269,7 +269,7 @@ Sims[["sims_interact"]] %>%
          Category = ifelse(wnneighb == 0 & collegeed == 1, "College Educated,\nWhite Social Prejudice = 0", Category),
          Category = ifelse(wnneighb == 1 & collegeed == 1, "College Educated,\nWhite Social Prejudice = 1", Category)) %>%
   mutate(x = c(rep(.675, 4), rep(.3, 4), rep(.55, 4)),
-         y = rep(seq(1.45, 4.45, by=1), 3)) -> annotate_me
+         y = rep(c(3.5,1.5,4.5,2.5), 3)) -> annotate_me
 
 
 Sims[["sims_interact"]] %>%
