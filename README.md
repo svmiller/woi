@@ -3,7 +3,7 @@ The Effect of White Social Prejudice on Support for American Democracy
 
 This is a co-authored working paper done with [Nicholas T. Davis](http://www.nicholastdavis.com/) (University of Alabama). It is forthcoming in *Journal of Race, Ethnicity, and Politics.* 
 
-This paper was previously known as "White Outgroup Intolerance and Declining Support for American Democracy", hence the `woi` directory name. Part of the peer review process led to de-emphasizing identity and intolerance as foundation concepts leading to prejudice in order to just start with a discussion of prejudice in the American context. Think of the difference as more in focus than substance. I kinda wish I can go back and change the name of the directory, but I can't. 🤷‍♂️️
+This paper was previously known as "White Outgroup Intolerance and Declining Support for American Democracy", hence the `woi` directory name. Part of the peer review process led to de-emphasizing identity and intolerance as foundation concepts leading to prejudice in order to just start with a discussion of prejudice in the American context. Think of the difference as more in focus than substance. I kinda wish I can go back and change the name of the directory, but it'd be a loss for users who have already starred/watched the repo.
 
 ## Abstract
 
